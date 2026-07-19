@@ -193,6 +193,7 @@ export function AnimalsPage() {
                 <p className="text-caption text-text-secondary">
                   {CATEGORIES.find((c) => c.key === animal.categoria)?.label ?? animal.categoria} · {animal.sexo === 'macho' ? 'Macho' : 'Fêmea'}
                   {animal.raca ? ` · ${animal.raca}` : ''}
+                  {animal.brinco ? ` · Brinco ${animal.brinco}` : ''}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-sm">
