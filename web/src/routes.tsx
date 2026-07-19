@@ -11,13 +11,13 @@ const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(
 const AnimalsPage = lazy(() => import('./pages/animals/AnimalsPage').then((m) => ({ default: m.AnimalsPage })));
 const FinancePage = lazy(() => import('./pages/finance/FinancePage').then((m) => ({ default: m.FinancePage })));
 const FarmsPage = lazy(() => import('./pages/farms/FarmsPage').then((m) => ({ default: m.FarmsPage })));
+const HealthPage = lazy(() => import('./pages/health/HealthPage').then((m) => ({ default: m.HealthPage })));
 
 // Módulos do prompt ainda não implementados nesta fase -- placeholder
 // "em breve" em vez de 404, pra já aparecerem no menu com o nome certo.
 const COMING_SOON_ROUTES = [
   'pesagens',
   'reproducao',
-  'sanidade',
   'mortalidade',
   'estoque',
   'funcionarios',
@@ -45,6 +45,7 @@ export function AppRoutes() {
           <Route path="animais" element={<AnimalsPage />} />
           <Route path="financeiro" element={<FinancePage />} />
           <Route path="fazendas" element={<FarmsPage />} />
+          <Route path="sanidade" element={<HealthPage />} />
           {COMING_SOON_ROUTES.map((path) => (
             <Route key={path} path={path} element={<PagePlaceholder title="Módulo em construção" comingSoon />} />
           ))}

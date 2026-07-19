@@ -10,6 +10,8 @@ import type {
   FarmRole,
   FinanceCategory,
   FinanceTransaction,
+  HealthRecord,
+  HealthRecordType,
   TransactionType,
   UserProfile,
   Weighing,
@@ -64,7 +66,7 @@ export const farmsApi = {
 };
 
 const ANIMAL_SELECT =
-  'id,farmId:fazenda_id,numero,brinco,nome,sexo,raca,categoria,lote,dataNascimento:data_nascimento,pesoNascimentoKg:peso_nascimento_kg,origem,status,observacoes,createdAt:created_at';
+  'id,farmId:fazenda_id,numero,brinco,nome,sexo,raca,categoria,lote,dataNascimento:data_nascimento,pesoNascimentoKg:peso_nascimento_kg,origem,status,observacoes,dataSaida:data_saida,valorSaida:valor_saida,observacoesSaida:observacoes_saida,createdAt:created_at';
 
 export const animalsApi = {
   list: (fazendaId: string) =>
@@ -103,8 +105,53 @@ export const animalsApi = {
         .select(ANIMAL_SELECT)
         .single(),
     ),
-  updateStatus: (id: string, status: AnimalStatus) =>
-    unwrap<Animal>(supabase.from('animais').update({ status }).eq('id', id).select(ANIMAL_SELECT).single()),
+  // Venda/abate/morte sempre capturam o que aconteceu -- não é só trocar
+  // o status. Pra vendido/abatido com valor informado, também lança a
+  // receita no Financeiro automaticamente (categoria "Venda de gado" se
+  // existir, senão sem categoria) -- sem isso a venda de um animal nunca
+  // aparecia no fluxo de caixa por conta própria.
+  registerExit: async (input: {
+    id: string;
+    fazendaId: string;
+    status: Extract<AnimalStatus, 'vendido' | 'abatido' | 'morto'>;
+    dataSaida: string;
+    valorSaida?: number;
+    observacoesSaida?: string;
+    animalLabel: string;
+  }): Promise<Animal> => {
+    const animal = await unwrap<Animal>(
+      supabase
+        .from('animais')
+        .update({
+          status: input.status,
+          data_saida: input.dataSaida,
+          valor_saida: input.valorSaida ?? null,
+          observacoes_saida: input.observacoesSaida ?? null,
+        })
+        .eq('id', input.id)
+        .select(ANIMAL_SELECT)
+        .single(),
+    );
+
+    if ((input.status === 'vendido' || input.status === 'abatido') && input.valorSaida) {
+      const categories = await unwrap<{ id: string; name: string }[]>(
+        supabase.from('financeiro_categorias').select('id,name').eq('fazenda_id', input.fazendaId).eq('type', 'receita'),
+      );
+      const categoryId = categories.find((c) => c.name === 'Venda de gado')?.id;
+      await unwrap(
+        supabase.from('financeiro_transacoes').insert({
+          fazenda_id: input.fazendaId,
+          type: 'receita',
+          categoria_id: categoryId ?? null,
+          amount: input.valorSaida,
+          description: `${input.status === 'vendido' ? 'Venda' : 'Abate'} — ${input.animalLabel}`,
+          date: input.dataSaida,
+        }),
+      );
+    }
+
+    return animal;
+  },
   delete: (id: string) => unwrap(supabase.from('animais').delete().eq('id', id)),
   listWeighings: (animalId: string) =>
     unwrap<Weighing[]>(
@@ -162,4 +209,49 @@ export const financeApi = {
         .single(),
     ),
   deleteTransaction: (id: string) => unwrap(supabase.from('financeiro_transacoes').delete().eq('id', id)),
+};
+
+const HEALTH_RECORD_SELECT = 'id,animalId:animal_id,tipo,produto,data,proximaAplicacao:proxima_aplicacao,veterinario,observacoes';
+
+export const healthApi = {
+  // Lista de todos os registros da fazenda (join com animais só pra
+  // exibir de quem é o registro na tela de Sanidade) -- RLS já restringe
+  // via fazenda_role(a.fazenda_id) na policy de sanidade_registros.
+  listForFarm: async (fazendaId: string): Promise<HealthRecord[]> => {
+    const rows = await unwrap<(HealthRecord & { animal: { numero: string | null; brinco: string | null; nome: string | null } | null })[]>(
+      supabase
+        .from('sanidade_registros')
+        .select(`${HEALTH_RECORD_SELECT},animal:animais!inner(numero,brinco,nome,fazenda_id)`)
+        .eq('animal.fazenda_id', fazendaId)
+        .order('data', { ascending: false }),
+    );
+    return rows.map((r) => ({ ...r, animalLabel: r.animal?.nome || r.animal?.numero || r.animal?.brinco || '—' }));
+  },
+  listForAnimal: (animalId: string) =>
+    unwrap<HealthRecord[]>(supabase.from('sanidade_registros').select(HEALTH_RECORD_SELECT).eq('animal_id', animalId).order('data', { ascending: false })),
+  create: (input: {
+    animalId: string;
+    tipo: HealthRecordType;
+    produto: string;
+    data: string;
+    proximaAplicacao?: string;
+    veterinario?: string;
+    observacoes?: string;
+  }) =>
+    unwrap<HealthRecord>(
+      supabase
+        .from('sanidade_registros')
+        .insert({
+          animal_id: input.animalId,
+          tipo: input.tipo,
+          produto: input.produto,
+          data: input.data,
+          proxima_aplicacao: input.proximaAplicacao,
+          veterinario: input.veterinario,
+          observacoes: input.observacoes,
+        })
+        .select(HEALTH_RECORD_SELECT)
+        .single(),
+    ),
+  delete: (id: string) => unwrap(supabase.from('sanidade_registros').delete().eq('id', id)),
 };

@@ -55,6 +55,9 @@ export interface Animal {
   origem: string | null;
   status: AnimalStatus;
   observacoes: string | null;
+  dataSaida: string | null;
+  valorSaida: number | null;
+  observacoesSaida: string | null;
   createdAt: string;
 }
 
@@ -63,6 +66,20 @@ export interface Weighing {
   animalId: string;
   data: string;
   pesoKg: number;
+  observacoes: string | null;
+}
+
+export type HealthRecordType = 'vacina' | 'medicamento' | 'vermifugo' | 'exame' | 'outro';
+
+export interface HealthRecord {
+  id: string;
+  animalId: string;
+  animalLabel?: string;
+  tipo: HealthRecordType;
+  produto: string;
+  data: string;
+  proximaAplicacao: string | null;
+  veterinario: string | null;
   observacoes: string | null;
 }
 

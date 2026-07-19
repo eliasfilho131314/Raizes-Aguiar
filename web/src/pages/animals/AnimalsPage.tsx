@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Scale, Trash2 } from 'lucide-react';
+import { Scale, Syringe, Trash2 } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { TextField } from '../../components/TextField';
 import { Button } from '../../components/Button';
 import { Select } from '../../components/Select';
 import { Badge } from '../../components/Badge';
-import { animalsApi } from '../../api/endpoints';
+import { animalsApi, healthApi } from '../../api/endpoints';
 import { ApiError } from '../../api/client';
 import { useFarm } from '../../auth/FarmContext';
-import type { Animal, AnimalCategory, AnimalSex, AnimalStatus } from '../../api/types';
+import type { Animal, AnimalCategory, AnimalSex, AnimalStatus, HealthRecordType } from '../../api/types';
 
 const CATEGORIES: { key: AnimalCategory; label: string }[] = [
   { key: 'bezerro', label: 'Bezerro' },
@@ -37,6 +37,18 @@ const STATUS_TONE: Record<AnimalStatus, 'olive' | 'brown' | 'danger' | 'neutral'
   abatido: 'neutral',
   morto: 'danger',
 };
+
+const HEALTH_TYPES: { key: HealthRecordType; label: string }[] = [
+  { key: 'vacina', label: 'Vacina' },
+  { key: 'medicamento', label: 'Medicamento' },
+  { key: 'vermifugo', label: 'Vermífugo' },
+  { key: 'exame', label: 'Exame' },
+  { key: 'outro', label: 'Outro' },
+];
+
+function animalLabel(animal: Pick<Animal, 'nome' | 'numero' | 'brinco'>): string {
+  return animal.nome || animal.numero || animal.brinco || 'Sem identificação';
+}
 
 function CreateAnimalForm({ farmId }: { farmId: string }) {
   const queryClient = useQueryClient();
@@ -144,21 +156,107 @@ function WeighingSection({ animal }: { animal: Animal }) {
   );
 }
 
-export function AnimalsPage() {
-  const { selectedFarm } = useFarm();
+function HealthSection({ animal }: { animal: Animal }) {
   const queryClient = useQueryClient();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const farmId = selectedFarm!.id;
+  const { data: records } = useQuery({ queryKey: ['health-records', animal.id], queryFn: () => healthApi.listForAnimal(animal.id) });
+  const [tipo, setTipo] = useState<HealthRecordType>('vacina');
+  const [produto, setProduto] = useState('');
+  const [data, setData] = useState(new Date().toISOString().slice(0, 10));
+  const [proximaAplicacao, setProximaAplicacao] = useState('');
 
-  const { data: animals } = useQuery({ queryKey: ['farm-data', 'animais', farmId], queryFn: () => animalsApi.list(farmId) });
+  const addRecord = useMutation({
+    mutationFn: () => healthApi.create({ animalId: animal.id, tipo, produto: produto.trim(), data, proximaAplicacao: proximaAplicacao || undefined }),
+    onSuccess: () => {
+      setProduto('');
+      setProximaAplicacao('');
+      queryClient.invalidateQueries({ queryKey: ['health-records', animal.id] });
+      queryClient.invalidateQueries({ queryKey: ['farm-data', 'sanidade'] });
+    },
+  });
 
-  const updateStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: AnimalStatus }) => animalsApi.updateStatus(id, status),
+  return (
+    <div className="mt-sm flex flex-col gap-sm border-t border-border pt-sm">
+      <div className="flex flex-wrap items-end gap-sm">
+        <Select label="Tipo" value={tipo} onChange={(v) => setTipo(v as HealthRecordType)} options={HEALTH_TYPES.map((t) => ({ value: t.key, label: t.label }))} />
+        <TextField label="Produto/procedimento" value={produto} onChange={(e) => setProduto(e.target.value)} />
+        <TextField label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+        <TextField label="Próxima aplicação (opcional)" type="date" value={proximaAplicacao} onChange={(e) => setProximaAplicacao(e.target.value)} />
+        <Button label="Registrar" variant="secondary" onClick={() => produto.trim() && addRecord.mutate()} loading={addRecord.isPending} className="mb-0.5 w-fit" />
+      </div>
+      {records && records.length > 0 ? (
+        <div className="flex flex-col gap-1">
+          {records.map((r) => (
+            <p key={r.id} className="text-caption text-text-primary">
+              {HEALTH_TYPES.find((t) => t.key === r.tipo)?.label} — {r.produto} ({new Date(r.data).toLocaleDateString('pt-BR')})
+              {r.proximaAplicacao ? ` · próxima: ${new Date(r.proximaAplicacao).toLocaleDateString('pt-BR')}` : ''}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <p className="text-caption text-text-secondary">Nenhum registro sanitário ainda.</p>
+      )}
+    </div>
+  );
+}
+
+function ExitForm({ animal, status, farmId, onDone }: { animal: Animal; status: AnimalStatus; farmId: string; onDone: () => void }) {
+  const queryClient = useQueryClient();
+  const [data, setData] = useState(new Date().toISOString().slice(0, 10));
+  const [valor, setValor] = useState('');
+  const [observacoes, setObservacoes] = useState('');
+
+  const needsValue = status === 'vendido' || status === 'abatido';
+
+  const confirm = useMutation({
+    mutationFn: () =>
+      animalsApi.registerExit({
+        id: animal.id,
+        fazendaId: farmId,
+        status: status as 'vendido' | 'abatido' | 'morto',
+        dataSaida: data,
+        valorSaida: valor ? Number(valor) : undefined,
+        observacoesSaida: observacoes.trim() || undefined,
+        animalLabel: animalLabel(animal),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['farm-data', 'animais', farmId] });
       queryClient.invalidateQueries({ queryKey: ['farm-data', 'dashboard', farmId] });
+      queryClient.invalidateQueries({ queryKey: ['farm-data', 'finance-transactions', farmId] });
+      onDone();
     },
   });
+
+  const titles: Record<string, string> = { vendido: 'Confirmar venda', abatido: 'Confirmar abate', morto: 'Registrar morte' };
+
+  return (
+    <div className="mt-sm flex flex-col gap-sm border-t border-border pt-sm">
+      <p className="text-caption font-semibold text-text-secondary">{titles[status]}</p>
+      <div className="flex flex-wrap items-end gap-sm">
+        <TextField label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+        {needsValue ? <TextField label="Valor (R$)" type="number" value={valor} onChange={(e) => setValor(e.target.value)} /> : null}
+        <TextField
+          label={status === 'morto' ? 'Motivo (opcional)' : 'Comprador/observações (opcional)'}
+          value={observacoes}
+          onChange={(e) => setObservacoes(e.target.value)}
+          className="min-w-[220px] flex-1"
+        />
+      </div>
+      <div className="flex gap-sm">
+        <Button label="Confirmar" variant={status === 'morto' ? 'danger' : 'primary'} onClick={() => confirm.mutate()} loading={confirm.isPending} className="w-fit" />
+        <Button label="Cancelar" variant="secondary" onClick={onDone} className="w-fit" />
+      </div>
+    </div>
+  );
+}
+
+export function AnimalsPage() {
+  const { selectedFarm } = useFarm();
+  const queryClient = useQueryClient();
+  const [expandedSection, setExpandedSection] = useState<{ animalId: string; section: 'pesagens' | 'sanidade' } | null>(null);
+  const [pendingExit, setPendingExit] = useState<{ animalId: string; status: AnimalStatus } | null>(null);
+  const farmId = selectedFarm!.id;
+
+  const { data: animals } = useQuery({ queryKey: ['farm-data', 'animais', farmId], queryFn: () => animalsApi.list(farmId) });
 
   const deleteAnimal = useMutation({
     mutationFn: (id: string) => animalsApi.delete(id),
@@ -169,6 +267,10 @@ export function AnimalsPage() {
   });
 
   const canManage = selectedFarm!.myRole === 'administrador' || selectedFarm!.myRole === 'gerente';
+
+  function toggleSection(animalId: string, section: 'pesagens' | 'sanidade') {
+    setExpandedSection((current) => (current?.animalId === animalId && current.section === section ? null : { animalId, section }));
+  }
 
   return (
     <>
@@ -187,14 +289,19 @@ export function AnimalsPage() {
           <Card key={animal.id} span="col-span-12 lg:col-span-6">
             <div className="flex items-start justify-between gap-sm">
               <div>
-                <p className="text-body font-semibold text-text-primary">
-                  {animal.nome || animal.numero || animal.brinco || 'Sem identificação'}
-                </p>
+                <p className="text-body font-semibold text-text-primary">{animalLabel(animal)}</p>
                 <p className="text-caption text-text-secondary">
                   {CATEGORIES.find((c) => c.key === animal.categoria)?.label ?? animal.categoria} · {animal.sexo === 'macho' ? 'Macho' : 'Fêmea'}
                   {animal.raca ? ` · ${animal.raca}` : ''}
                   {animal.brinco ? ` · Brinco ${animal.brinco}` : ''}
                 </p>
+                {animal.status !== 'ativo' && animal.dataSaida ? (
+                  <p className="text-caption text-text-secondary">
+                    {STATUS_LABELS[animal.status]} em {new Date(animal.dataSaida).toLocaleDateString('pt-BR')}
+                    {animal.valorSaida ? ` · R$ ${animal.valorSaida.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}
+                    {animal.observacoesSaida ? ` · ${animal.observacoesSaida}` : ''}
+                  </p>
+                ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-sm">
                 <Badge label={STATUS_LABELS[animal.status]} tone={STATUS_TONE[animal.status]} />
@@ -206,29 +313,43 @@ export function AnimalsPage() {
               </div>
             </div>
 
-            {canManage && animal.status === 'ativo' ? (
+            {canManage && animal.status === 'ativo' && pendingExit?.animalId !== animal.id ? (
               <div className="mt-sm flex flex-wrap gap-xs">
-                <button type="button" onClick={() => updateStatus.mutate({ id: animal.id, status: 'vendido' })} className="rounded-button border border-border px-sm py-1 text-caption text-text-primary hover:bg-surface-alt">
+                <button type="button" onClick={() => setPendingExit({ animalId: animal.id, status: 'vendido' })} className="rounded-button border border-border px-sm py-1 text-caption text-text-primary hover:bg-surface-alt">
                   Marcar vendido
                 </button>
-                <button type="button" onClick={() => updateStatus.mutate({ id: animal.id, status: 'abatido' })} className="rounded-button border border-border px-sm py-1 text-caption text-text-primary hover:bg-surface-alt">
+                <button type="button" onClick={() => setPendingExit({ animalId: animal.id, status: 'abatido' })} className="rounded-button border border-border px-sm py-1 text-caption text-text-primary hover:bg-surface-alt">
                   Marcar abatido
                 </button>
-                <button type="button" onClick={() => updateStatus.mutate({ id: animal.id, status: 'morto' })} className="rounded-button border border-border px-sm py-1 text-caption text-danger hover:bg-surface-alt">
+                <button type="button" onClick={() => setPendingExit({ animalId: animal.id, status: 'morto' })} className="rounded-button border border-border px-sm py-1 text-caption text-danger hover:bg-surface-alt">
                   Registrar morte
                 </button>
               </div>
             ) : null}
 
-            <button
-              type="button"
-              onClick={() => setExpandedId(expandedId === animal.id ? null : animal.id)}
-              className="mt-sm flex items-center gap-1 text-caption text-primary hover:underline"
-            >
-              <Scale size={14} /> {expandedId === animal.id ? 'Ocultar pesagens' : 'Ver pesagens'}
-            </button>
+            {pendingExit?.animalId === animal.id ? (
+              <ExitForm animal={animal} status={pendingExit.status} farmId={farmId} onDone={() => setPendingExit(null)} />
+            ) : null}
 
-            {expandedId === animal.id ? <WeighingSection animal={animal} /> : null}
+            <div className="mt-sm flex gap-md">
+              <button
+                type="button"
+                onClick={() => toggleSection(animal.id, 'pesagens')}
+                className="flex items-center gap-1 text-caption text-primary hover:underline"
+              >
+                <Scale size={14} /> {expandedSection?.animalId === animal.id && expandedSection.section === 'pesagens' ? 'Ocultar pesagens' : 'Ver pesagens'}
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleSection(animal.id, 'sanidade')}
+                className="flex items-center gap-1 text-caption text-primary hover:underline"
+              >
+                <Syringe size={14} /> {expandedSection?.animalId === animal.id && expandedSection.section === 'sanidade' ? 'Ocultar sanidade' : 'Ver sanidade'}
+              </button>
+            </div>
+
+            {expandedSection?.animalId === animal.id && expandedSection.section === 'pesagens' ? <WeighingSection animal={animal} /> : null}
+            {expandedSection?.animalId === animal.id && expandedSection.section === 'sanidade' ? <HealthSection animal={animal} /> : null}
           </Card>
         ))
       )}
