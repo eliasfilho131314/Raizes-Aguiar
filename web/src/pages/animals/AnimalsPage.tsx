@@ -61,6 +61,8 @@ function CreateAnimalForm({ farmId }: { farmId: string }) {
   const [lote, setLote] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
   const [pesoNascimento, setPesoNascimento] = useState('');
+  const [origem, setOrigem] = useState('');
+  const [valorCompra, setValorCompra] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const create = useMutation({
@@ -76,6 +78,8 @@ function CreateAnimalForm({ farmId }: { farmId: string }) {
         lote: lote.trim() || undefined,
         dataNascimento: dataNascimento || undefined,
         pesoNascimentoKg: pesoNascimento ? Number(pesoNascimento) : undefined,
+        origem: origem.trim() || undefined,
+        valorCompra: valorCompra ? Number(valorCompra) : undefined,
       }),
     onSuccess: () => {
       setNumero('');
@@ -85,9 +89,12 @@ function CreateAnimalForm({ farmId }: { farmId: string }) {
       setLote('');
       setDataNascimento('');
       setPesoNascimento('');
+      setOrigem('');
+      setValorCompra('');
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['farm-data', 'animais', farmId] });
       queryClient.invalidateQueries({ queryKey: ['farm-data', 'dashboard', farmId] });
+      queryClient.invalidateQueries({ queryKey: ['farm-data', 'finance-transactions', farmId] });
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : 'Não foi possível cadastrar o animal.'),
   });
@@ -113,7 +120,12 @@ function CreateAnimalForm({ farmId }: { farmId: string }) {
         <TextField label="Lote" value={lote} onChange={(e) => setLote(e.target.value)} />
         <TextField label="Data de nascimento" type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} />
         <TextField label="Peso ao nascer (kg)" type="number" value={pesoNascimento} onChange={(e) => setPesoNascimento(e.target.value)} />
+        <TextField label="Origem (opcional)" value={origem} onChange={(e) => setOrigem(e.target.value)} placeholder="Ex: nascimento próprio, compra" />
+        <TextField label="Valor de compra (R$, opcional)" type="number" value={valorCompra} onChange={(e) => setValorCompra(e.target.value)} />
       </div>
+      {valorCompra ? (
+        <span className="text-caption text-text-secondary">Vai lançar uma despesa de "Compra de gado" no Financeiro automaticamente.</span>
+      ) : null}
       {error ? <span className="text-caption text-danger">{error}</span> : null}
       <Button label="Cadastrar animal" onClick={() => create.mutate()} loading={create.isPending} className="w-fit" />
     </Card>
@@ -295,6 +307,12 @@ export function AnimalsPage() {
                   {animal.raca ? ` · ${animal.raca}` : ''}
                   {animal.brinco ? ` · Brinco ${animal.brinco}` : ''}
                 </p>
+                {animal.origem || animal.valorCompra ? (
+                  <p className="text-caption text-text-secondary">
+                    {animal.origem ? animal.origem : 'Compra'}
+                    {animal.valorCompra ? ` · R$ ${animal.valorCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}
+                  </p>
+                ) : null}
                 {animal.status !== 'ativo' && animal.dataSaida ? (
                   <p className="text-caption text-text-secondary">
                     {STATUS_LABELS[animal.status]} em {new Date(animal.dataSaida).toLocaleDateString('pt-BR')}

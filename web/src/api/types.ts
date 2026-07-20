@@ -55,6 +55,7 @@ export interface Animal {
   origem: string | null;
   status: AnimalStatus;
   observacoes: string | null;
+  valorCompra: number | null;
   dataSaida: string | null;
   valorSaida: number | null;
   observacoesSaida: string | null;

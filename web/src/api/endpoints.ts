@@ -66,12 +66,15 @@ export const farmsApi = {
 };
 
 const ANIMAL_SELECT =
-  'id,farmId:fazenda_id,numero,brinco,nome,sexo,raca,categoria,lote,dataNascimento:data_nascimento,pesoNascimentoKg:peso_nascimento_kg,origem,status,observacoes,dataSaida:data_saida,valorSaida:valor_saida,observacoesSaida:observacoes_saida,createdAt:created_at';
+  'id,farmId:fazenda_id,numero,brinco,nome,sexo,raca,categoria,lote,dataNascimento:data_nascimento,pesoNascimentoKg:peso_nascimento_kg,origem,status,observacoes,valorCompra:valor_compra,dataSaida:data_saida,valorSaida:valor_saida,observacoesSaida:observacoes_saida,createdAt:created_at';
 
 export const animalsApi = {
   list: (fazendaId: string) =>
     unwrap<Animal[]>(supabase.from('animais').select(ANIMAL_SELECT).eq('fazenda_id', fazendaId).order('created_at', { ascending: false })),
-  create: (input: {
+  // Quando o animal entra por compra (valorCompra informado), lança a
+  // despesa correspondente no Financeiro na hora -- espelha o que
+  // registerExit já faz pro lado da venda, fechando o ciclo compra/venda.
+  create: async (input: {
     fazendaId: string;
     numero?: string;
     brinco?: string;
@@ -84,8 +87,9 @@ export const animalsApi = {
     pesoNascimentoKg?: number;
     origem?: string;
     observacoes?: string;
-  }) =>
-    unwrap<Animal>(
+    valorCompra?: number;
+  }): Promise<Animal> => {
+    const animal = await unwrap<Animal>(
       supabase
         .from('animais')
         .insert({
@@ -101,10 +105,32 @@ export const animalsApi = {
           peso_nascimento_kg: input.pesoNascimentoKg,
           origem: input.origem,
           observacoes: input.observacoes,
+          valor_compra: input.valorCompra ?? null,
         })
         .select(ANIMAL_SELECT)
         .single(),
-    ),
+    );
+
+    if (input.valorCompra) {
+      const categories = await unwrap<{ id: string; name: string }[]>(
+        supabase.from('financeiro_categorias').select('id,name').eq('fazenda_id', input.fazendaId).eq('type', 'despesa'),
+      );
+      const categoryId = categories.find((c) => c.name === 'Compra de gado')?.id;
+      const label = input.nome || input.numero || input.brinco || 'animal';
+      await unwrap(
+        supabase.from('financeiro_transacoes').insert({
+          fazenda_id: input.fazendaId,
+          type: 'despesa',
+          categoria_id: categoryId ?? null,
+          amount: input.valorCompra,
+          description: `Compra — ${label}`,
+          date: new Date().toISOString().slice(0, 10),
+        }),
+      );
+    }
+
+    return animal;
+  },
   // Venda/abate/morte sempre capturam o que aconteceu -- não é só trocar
   // o status. Pra vendido/abatido com valor informado, também lança a
   // receita no Financeiro automaticamente (categoria "Venda de gado" se
