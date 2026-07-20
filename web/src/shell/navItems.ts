@@ -1,6 +1,5 @@
 import {
   Beef,
-  Bot,
   Building2,
   Calendar,
   FileBarChart,
@@ -47,7 +46,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Planilhas', path: '/planilhas', icon: FileSpreadsheet, comingSoon: true },
   { label: 'Relatórios', path: '/relatorios', icon: FileBarChart, comingSoon: true },
   { label: 'Calendário', path: '/calendario', icon: Calendar, comingSoon: true },
-  { label: 'Raízes IA', path: '/ia', icon: Bot, comingSoon: true },
   { label: 'Fazendas', path: '/fazendas', icon: Building2, minRole: ['administrador'] },
   { label: 'Configurações', path: '/configuracoes', icon: Settings, comingSoon: true },
 ];
