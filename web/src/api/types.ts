@@ -84,6 +84,22 @@ export interface HealthRecord {
   observacoes: string | null;
 }
 
+export type ReproductionType = 'cio' | 'inseminacao' | 'diagnostico' | 'parto';
+export type ReproductionResult = 'prenha' | 'vazia';
+
+export interface ReproductionRecord {
+  id: string;
+  animalId: string;
+  animalLabel?: string;
+  tipo: ReproductionType;
+  data: string;
+  touroOuSemen: string | null;
+  resultado: ReproductionResult | null;
+  dataPrevistaParto: string | null;
+  criaIdentificacao: string | null;
+  observacoes: string | null;
+}
+
 export type TransactionType = 'receita' | 'despesa';
 
 export interface FinanceCategory {

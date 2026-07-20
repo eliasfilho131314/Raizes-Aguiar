@@ -12,10 +12,17 @@ interface SelectProps {
 }
 
 export function Select({ label, value, onChange, options, className = '' }: SelectProps) {
+  const selectId = label?.toLowerCase().replace(/\s+/g, '-');
+
   return (
     <div className={`flex flex-col gap-xs ${className}`}>
-      {label ? <label className="text-caption text-text-secondary">{label}</label> : null}
+      {label ? (
+        <label htmlFor={selectId} className="text-caption text-text-secondary">
+          {label}
+        </label>
+      ) : null}
       <select
+        id={selectId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="h-11 rounded-button border border-border bg-surface px-md text-body text-text-primary outline-none focus:border-primary"

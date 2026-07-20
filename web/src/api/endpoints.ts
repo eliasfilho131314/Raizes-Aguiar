@@ -12,6 +12,9 @@ import type {
   FinanceTransaction,
   HealthRecord,
   HealthRecordType,
+  ReproductionRecord,
+  ReproductionResult,
+  ReproductionType,
   TransactionType,
   UserProfile,
   Weighing,
@@ -280,4 +283,51 @@ export const healthApi = {
         .single(),
     ),
   delete: (id: string) => unwrap(supabase.from('sanidade_registros').delete().eq('id', id)),
+};
+
+const REPRODUCTION_RECORD_SELECT =
+  'id,animalId:animal_id,tipo,data,touroOuSemen:touro_ou_semen,resultado,dataPrevistaParto:data_prevista_parto,criaIdentificacao:cria_identificacao,observacoes';
+
+export const reproductionApi = {
+  listForFarm: async (fazendaId: string): Promise<ReproductionRecord[]> => {
+    const rows = await unwrap<(ReproductionRecord & { animal: { numero: string | null; brinco: string | null; nome: string | null } | null })[]>(
+      supabase
+        .from('reproducao_registros')
+        .select(`${REPRODUCTION_RECORD_SELECT},animal:animais!inner(numero,brinco,nome,fazenda_id)`)
+        .eq('animal.fazenda_id', fazendaId)
+        .order('data', { ascending: false }),
+    );
+    return rows.map((r) => ({ ...r, animalLabel: r.animal?.nome || r.animal?.numero || r.animal?.brinco || '—' }));
+  },
+  listForAnimal: (animalId: string) =>
+    unwrap<ReproductionRecord[]>(
+      supabase.from('reproducao_registros').select(REPRODUCTION_RECORD_SELECT).eq('animal_id', animalId).order('data', { ascending: false }),
+    ),
+  create: (input: {
+    animalId: string;
+    tipo: ReproductionType;
+    data: string;
+    touroOuSemen?: string;
+    resultado?: ReproductionResult;
+    dataPrevistaParto?: string;
+    criaIdentificacao?: string;
+    observacoes?: string;
+  }) =>
+    unwrap<ReproductionRecord>(
+      supabase
+        .from('reproducao_registros')
+        .insert({
+          animal_id: input.animalId,
+          tipo: input.tipo,
+          data: input.data,
+          touro_ou_semen: input.touroOuSemen,
+          resultado: input.resultado,
+          data_prevista_parto: input.dataPrevistaParto,
+          cria_identificacao: input.criaIdentificacao,
+          observacoes: input.observacoes,
+        })
+        .select(REPRODUCTION_RECORD_SELECT)
+        .single(),
+    ),
+  delete: (id: string) => unwrap(supabase.from('reproducao_registros').delete().eq('id', id)),
 };
