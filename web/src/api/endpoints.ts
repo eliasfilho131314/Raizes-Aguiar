@@ -15,6 +15,10 @@ import type {
   ReproductionRecord,
   ReproductionResult,
   ReproductionType,
+  StockCategory,
+  StockItem,
+  StockMovement,
+  StockMovementType,
   TransactionType,
   UserProfile,
   Weighing,
@@ -330,4 +334,85 @@ export const reproductionApi = {
         .single(),
     ),
   delete: (id: string) => unwrap(supabase.from('reproducao_registros').delete().eq('id', id)),
+};
+
+const STOCK_CATEGORY_FINANCE_CATEGORY: Record<StockCategory, string> = {
+  racao: 'Ração e suplementos',
+  medicamento: 'Medicamentos e vacinas',
+  combustivel: 'Combustível',
+  outro: 'Outras despesas',
+};
+
+const STOCK_ITEM_SELECT = 'id,farmId:fazenda_id,nome,categoria,unidade,quantidadeAtual:quantidade_atual,quantidadeMinima:quantidade_minima';
+const STOCK_MOVEMENT_SELECT = 'id,itemId:item_id,tipo,quantidade,valorTotal:valor_total,data,observacoes';
+
+export const stockApi = {
+  listItems: (fazendaId: string) =>
+    unwrap<StockItem[]>(supabase.from('estoque_itens').select(STOCK_ITEM_SELECT).eq('fazenda_id', fazendaId).order('nome')),
+  createItem: (input: { fazendaId: string; nome: string; categoria: StockCategory; unidade: string; quantidadeMinima?: number }) =>
+    unwrap<StockItem>(
+      supabase
+        .from('estoque_itens')
+        .insert({
+          fazenda_id: input.fazendaId,
+          nome: input.nome,
+          categoria: input.categoria,
+          unidade: input.unidade,
+          quantidade_minima: input.quantidadeMinima ?? null,
+        })
+        .select(STOCK_ITEM_SELECT)
+        .single(),
+    ),
+  deleteItem: (id: string) => unwrap(supabase.from('estoque_itens').delete().eq('id', id)),
+  listMovements: (itemId: string) =>
+    unwrap<StockMovement[]>(supabase.from('estoque_movimentos').select(STOCK_MOVEMENT_SELECT).eq('item_id', itemId).order('data', { ascending: false })),
+  // Entrada com valor informado lança a despesa correspondente no
+  // Financeiro na categoria já seedada pra aquele tipo de item -- mesmo
+  // padrão de animalsApi.create (valorCompra) e registerExit (valorSaida).
+  addMovement: async (input: {
+    itemId: string;
+    fazendaId: string;
+    itemNome: string;
+    itemCategoria: StockCategory;
+    tipo: StockMovementType;
+    quantidade: number;
+    valorTotal?: number;
+    data: string;
+    observacoes?: string;
+  }): Promise<StockMovement> => {
+    const movement = await unwrap<StockMovement>(
+      supabase
+        .from('estoque_movimentos')
+        .insert({
+          item_id: input.itemId,
+          tipo: input.tipo,
+          quantidade: input.quantidade,
+          valor_total: input.valorTotal ?? null,
+          data: input.data,
+          observacoes: input.observacoes,
+        })
+        .select(STOCK_MOVEMENT_SELECT)
+        .single(),
+    );
+
+    if (input.tipo === 'entrada' && input.valorTotal) {
+      const categoryName = STOCK_CATEGORY_FINANCE_CATEGORY[input.itemCategoria];
+      const categories = await unwrap<{ id: string; name: string }[]>(
+        supabase.from('financeiro_categorias').select('id,name').eq('fazenda_id', input.fazendaId).eq('type', 'despesa'),
+      );
+      const categoryId = categories.find((c) => c.name === categoryName)?.id;
+      await unwrap(
+        supabase.from('financeiro_transacoes').insert({
+          fazenda_id: input.fazendaId,
+          type: 'despesa',
+          categoria_id: categoryId ?? null,
+          amount: input.valorTotal,
+          description: `Compra de estoque — ${input.itemNome}`,
+          date: input.data,
+        }),
+      );
+    }
+
+    return movement;
+  },
 };

@@ -100,6 +100,30 @@ export interface ReproductionRecord {
   observacoes: string | null;
 }
 
+export type StockCategory = 'racao' | 'medicamento' | 'combustivel' | 'outro';
+
+export interface StockItem {
+  id: string;
+  farmId: string;
+  nome: string;
+  categoria: StockCategory;
+  unidade: string;
+  quantidadeAtual: number;
+  quantidadeMinima: number | null;
+}
+
+export type StockMovementType = 'entrada' | 'saida';
+
+export interface StockMovement {
+  id: string;
+  itemId: string;
+  tipo: StockMovementType;
+  quantidade: number;
+  valorTotal: number | null;
+  data: string;
+  observacoes: string | null;
+}
+
 export type TransactionType = 'receita' | 'despesa';
 
 export interface FinanceCategory {
