@@ -100,7 +100,7 @@ export function ConfinementPage() {
                 <div>
                   <p className="text-body font-semibold text-text-primary">{batch.nome}</p>
                   <p className="text-caption text-text-secondary">
-                    {batch.quantidadeAnimais} animais · {dias} dias em confinamento
+                    {batch.quantidadeAnimais} animais · {dias} {dias === 1 ? 'dia' : 'dias'} em confinamento
                     {batch.pesoMedioEntradaKg ? ` · entrada ${batch.pesoMedioEntradaKg}kg` : ''}
                     {batch.consumoRacaoKgDia ? ` · ${batch.consumoRacaoKgDia}kg ração/dia` : ''}
                     {batch.dataSaidaPrevista ? ` · previsão de saída ${new Date(`${batch.dataSaidaPrevista}T00:00:00`).toLocaleDateString('pt-BR')}` : ''}

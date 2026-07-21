@@ -160,7 +160,7 @@ export function SpreadsheetsPage() {
           type="file"
           accept=".csv,text/csv"
           onChange={(e) => e.target.files?.[0] && handleImportFile(e.target.files[0])}
-          className="text-caption text-text-primary"
+          className="text-caption text-text-secondary file:mr-sm file:cursor-pointer file:rounded-button file:border-0 file:bg-surface-alt file:px-md file:py-sm file:text-caption file:font-semibold file:text-text-primary hover:file:brightness-95"
         />
         {importing ? <p className="text-caption text-text-secondary">Importando...</p> : null}
         {importResult ? (

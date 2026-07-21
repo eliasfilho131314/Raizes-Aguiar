@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 interface SelectOption {
   value: string;
   label: string;
@@ -12,7 +14,7 @@ interface SelectProps {
 }
 
 export function Select({ label, value, onChange, options, className = '' }: SelectProps) {
-  const selectId = label?.toLowerCase().replace(/\s+/g, '-');
+  const selectId = useId();
 
   return (
     <div className={`flex flex-col gap-xs ${className}`}>

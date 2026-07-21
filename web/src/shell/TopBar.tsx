@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Bell, Calendar, LogOut, Menu, Search, Settings, User } from 'lucide-react';
+import { Calendar, LogOut, Menu, Settings, User } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { Logo } from '../components/Logo';
 import { FarmSelector } from './FarmSelector';
@@ -27,14 +27,13 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
       <FarmSelector />
 
       <div className="ml-auto flex items-center gap-sm">
-        <button type="button" className="hidden rounded-button p-2 text-text-secondary hover:bg-surface-alt hover:text-text-primary sm:block" aria-label="Pesquisar">
-          <Search size={18} />
-        </button>
-        <button type="button" className="hidden rounded-button p-2 text-text-secondary hover:bg-surface-alt hover:text-text-primary sm:block" aria-label="Calendário">
+        <button
+          type="button"
+          onClick={() => navigate('/calendario')}
+          className="hidden rounded-button p-2 text-text-secondary hover:bg-surface-alt hover:text-text-primary sm:block"
+          aria-label="Calendário"
+        >
           <Calendar size={18} />
-        </button>
-        <button type="button" className="rounded-button p-2 text-text-secondary hover:bg-surface-alt hover:text-text-primary" aria-label="Notificações">
-          <Bell size={18} />
         </button>
 
         <div className="relative">

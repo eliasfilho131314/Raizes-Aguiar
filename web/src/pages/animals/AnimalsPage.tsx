@@ -24,6 +24,24 @@ const CATEGORIES: { key: AnimalCategory; label: string }[] = [
   { key: 'reprodutor', label: 'Reprodutor' },
 ];
 
+// Categoria já implica o sexo biológico -- acoplar evita o caso real de um
+// usuário cadastrar "touro" com sexo "fêmea" só porque o campo de sexo
+// ficou com o valor do animal cadastrado antes (o formulário não reseta
+// sexo/categoria entre cadastros, de propósito, pra agilizar lotes
+// parecidos -- mas sexo sempre devia seguir a categoria escolhida).
+const CATEGORY_SEXO: Record<AnimalCategory, AnimalSex> = {
+  bezerro: 'macho',
+  bezerra: 'femea',
+  garrote: 'macho',
+  novilha: 'femea',
+  novilho: 'macho',
+  boi: 'macho',
+  vaca: 'femea',
+  touro: 'macho',
+  matriz: 'femea',
+  reprodutor: 'macho',
+};
+
 const STATUS_LABELS: Record<AnimalStatus, string> = {
   ativo: 'Ativo',
   vendido: 'Vendido',
@@ -116,7 +134,16 @@ function CreateAnimalForm({ farmId }: { farmId: string }) {
             { value: 'macho', label: 'Macho' },
           ]}
         />
-        <Select label="Categoria" value={categoria} onChange={(v) => setCategoria(v as AnimalCategory)} options={CATEGORIES.map((c) => ({ value: c.key, label: c.label }))} />
+        <Select
+          label="Categoria"
+          value={categoria}
+          onChange={(v) => {
+            const nextCategoria = v as AnimalCategory;
+            setCategoria(nextCategoria);
+            setSexo(CATEGORY_SEXO[nextCategoria]);
+          }}
+          options={CATEGORIES.map((c) => ({ value: c.key, label: c.label }))}
+        />
         <TextField label="Lote" value={lote} onChange={(e) => setLote(e.target.value)} />
         <TextField label="Data de nascimento" type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} />
         <TextField label="Peso ao nascer (kg)" type="number" value={pesoNascimento} onChange={(e) => setPesoNascimento(e.target.value)} />

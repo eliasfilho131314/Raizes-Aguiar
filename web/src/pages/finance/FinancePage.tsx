@@ -67,11 +67,11 @@ export function FinancePage() {
         <h1 className="text-title font-bold text-text-primary">Financeiro</h1>
       </div>
 
-      <Card span="col-span-6 lg:col-span-4" className="flex flex-col gap-1">
+      <Card span="col-span-12 sm:col-span-6 lg:col-span-4" className="flex flex-col gap-1">
         <p className="text-title font-bold text-olive">{formatCurrency(totalIncome)}</p>
         <p className="text-caption text-text-secondary">Receitas (total)</p>
       </Card>
-      <Card span="col-span-6 lg:col-span-4" className="flex flex-col gap-1">
+      <Card span="col-span-12 sm:col-span-6 lg:col-span-4" className="flex flex-col gap-1">
         <p className="text-title font-bold text-danger">{formatCurrency(totalExpense)}</p>
         <p className="text-caption text-text-secondary">Despesas (total)</p>
       </Card>
