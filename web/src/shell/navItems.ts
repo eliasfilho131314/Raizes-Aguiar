@@ -43,7 +43,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Funcionários', path: '/funcionarios', icon: Users, minRole: ['administrador', 'gerente'] },
   { label: 'Pastagens', path: '/pastagens', icon: Trees },
   { label: 'Confinamento', path: '/confinamento', icon: Warehouse },
-  { label: 'Planilhas', path: '/planilhas', icon: FileSpreadsheet, comingSoon: true },
+  { label: 'Planilhas', path: '/planilhas', icon: FileSpreadsheet },
   { label: 'Relatórios', path: '/relatorios', icon: FileBarChart, minRole: ['administrador', 'gerente'] },
   { label: 'Calendário', path: '/calendario', icon: Calendar },
   { label: 'Fazendas', path: '/fazendas', icon: Building2, minRole: ['administrador'] },
