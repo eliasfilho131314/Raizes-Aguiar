@@ -124,6 +124,17 @@ export interface StockMovement {
   observacoes: string | null;
 }
 
+export interface Employee {
+  id: string;
+  farmId: string;
+  nome: string;
+  cargo: string | null;
+  salario: number | null;
+  telefone: string | null;
+  dataAdmissao: string | null;
+  ativo: boolean;
+}
+
 export type TransactionType = 'receita' | 'despesa';
 
 export interface FinanceCategory {

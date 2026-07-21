@@ -4,6 +4,7 @@ import type {
   AnimalCategory,
   AnimalSex,
   AnimalStatus,
+  Employee,
   Farm,
   FarmDashboardSummary,
   FarmMember,
@@ -414,5 +415,48 @@ export const stockApi = {
     }
 
     return movement;
+  },
+};
+
+const EMPLOYEE_SELECT = 'id,farmId:fazenda_id,nome,cargo,salario,telefone,dataAdmissao:data_admissao,ativo';
+
+export const employeesApi = {
+  list: (fazendaId: string) =>
+    unwrap<Employee[]>(supabase.from('funcionarios').select(EMPLOYEE_SELECT).eq('fazenda_id', fazendaId).order('nome')),
+  create: (input: { fazendaId: string; nome: string; cargo?: string; salario?: number; telefone?: string; dataAdmissao?: string }) =>
+    unwrap<Employee>(
+      supabase
+        .from('funcionarios')
+        .insert({
+          fazenda_id: input.fazendaId,
+          nome: input.nome,
+          cargo: input.cargo,
+          salario: input.salario ?? null,
+          telefone: input.telefone,
+          data_admissao: input.dataAdmissao,
+        })
+        .select(EMPLOYEE_SELECT)
+        .single(),
+    ),
+  setAtivo: (id: string, ativo: boolean) => unwrap<Employee>(supabase.from('funcionarios').update({ ativo }).eq('id', id).select(EMPLOYEE_SELECT).single()),
+  delete: (id: string) => unwrap(supabase.from('funcionarios').delete().eq('id', id)),
+  // Pagamento não tem tabela própria -- vira direto uma despesa em
+  // "Folha salarial" no Financeiro, mesmo padrão de compra de
+  // animal/estoque.
+  registerPayment: async (input: { fazendaId: string; employeeName: string; amount: number; date: string; competencia?: string }): Promise<void> => {
+    const categories = await unwrap<{ id: string; name: string }[]>(
+      supabase.from('financeiro_categorias').select('id,name').eq('fazenda_id', input.fazendaId).eq('type', 'despesa'),
+    );
+    const categoryId = categories.find((c) => c.name === 'Folha salarial')?.id;
+    await unwrap(
+      supabase.from('financeiro_transacoes').insert({
+        fazenda_id: input.fazendaId,
+        type: 'despesa',
+        categoria_id: categoryId ?? null,
+        amount: input.amount,
+        description: `Folha salarial — ${input.employeeName}${input.competencia ? ` (${input.competencia})` : ''}`,
+        date: input.date,
+      }),
+    );
   },
 };
