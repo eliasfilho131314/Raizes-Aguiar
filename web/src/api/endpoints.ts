@@ -8,6 +8,8 @@ import type {
   AnimalStatus,
   Employee,
   Farm,
+  Pasture,
+  PastureStatus,
   FarmDashboardSummary,
   FarmMember,
   FarmRole,
@@ -479,4 +481,34 @@ export const calendarApi = {
   setConcluido: (id: string, concluido: boolean) =>
     unwrap<AgendaItem>(supabase.from('eventos_agenda').update({ concluido }).eq('id', id).select(AGENDA_ITEM_SELECT).single()),
   delete: (id: string) => unwrap(supabase.from('eventos_agenda').delete().eq('id', id)),
+};
+
+const PASTURE_SELECT = 'id,farmId:fazenda_id,nome,areaHectares:area_hectares,capacidadeSuporte:capacidade_suporte,status,loteAtual:lote_atual,observacoes';
+
+export const pasturesApi = {
+  list: (fazendaId: string) => unwrap<Pasture[]>(supabase.from('pastagens').select(PASTURE_SELECT).eq('fazenda_id', fazendaId).order('nome')),
+  create: (input: { fazendaId: string; nome: string; areaHectares?: number; capacidadeSuporte?: number; observacoes?: string }) =>
+    unwrap<Pasture>(
+      supabase
+        .from('pastagens')
+        .insert({
+          fazenda_id: input.fazendaId,
+          nome: input.nome,
+          area_hectares: input.areaHectares ?? null,
+          capacidade_suporte: input.capacidadeSuporte ?? null,
+          observacoes: input.observacoes,
+        })
+        .select(PASTURE_SELECT)
+        .single(),
+    ),
+  update: (id: string, input: { status?: PastureStatus; loteAtual?: string | null }) =>
+    unwrap<Pasture>(
+      supabase
+        .from('pastagens')
+        .update({ status: input.status, lote_atual: input.loteAtual })
+        .eq('id', id)
+        .select(PASTURE_SELECT)
+        .single(),
+    ),
+  delete: (id: string) => unwrap(supabase.from('pastagens').delete().eq('id', id)),
 };

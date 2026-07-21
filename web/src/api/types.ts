@@ -136,6 +136,19 @@ export interface AgendaItem {
   observacoes: string | null;
 }
 
+export type PastureStatus = 'em_uso' | 'descanso';
+
+export interface Pasture {
+  id: string;
+  farmId: string;
+  nome: string;
+  areaHectares: number | null;
+  capacidadeSuporte: number | null;
+  status: PastureStatus;
+  loteAtual: string | null;
+  observacoes: string | null;
+}
+
 export interface Employee {
   id: string;
   farmId: string;

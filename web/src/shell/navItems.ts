@@ -41,7 +41,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Financeiro', path: '/financeiro', icon: Wallet, minRole: ['administrador', 'gerente'] },
   { label: 'Estoque', path: '/estoque', icon: Package },
   { label: 'Funcionários', path: '/funcionarios', icon: Users, minRole: ['administrador', 'gerente'] },
-  { label: 'Pastagens', path: '/pastagens', icon: Trees, comingSoon: true },
+  { label: 'Pastagens', path: '/pastagens', icon: Trees },
   { label: 'Confinamento', path: '/confinamento', icon: Warehouse, comingSoon: true },
   { label: 'Planilhas', path: '/planilhas', icon: FileSpreadsheet, comingSoon: true },
   { label: 'Relatórios', path: '/relatorios', icon: FileBarChart, minRole: ['administrador', 'gerente'] },
