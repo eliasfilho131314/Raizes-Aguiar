@@ -16,6 +16,7 @@ const ReproductionPage = lazy(() => import('./pages/reproduction/ReproductionPag
 const MortalityPage = lazy(() => import('./pages/mortality/MortalityPage').then((m) => ({ default: m.MortalityPage })));
 const StockPage = lazy(() => import('./pages/stock/StockPage').then((m) => ({ default: m.StockPage })));
 const EmployeesPage = lazy(() => import('./pages/employees/EmployeesPage').then((m) => ({ default: m.EmployeesPage })));
+const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })));
 
 // Módulos do prompt ainda não implementados nesta fase -- placeholder
 // "em breve" em vez de 404, pra já aparecerem no menu com o nome certo.
@@ -26,7 +27,6 @@ const COMING_SOON_ROUTES = [
   'confinamento',
   'planilhas',
   'relatorios',
-  'calendario',
   'configuracoes',
   'perfil',
 ];
@@ -50,6 +50,7 @@ export function AppRoutes() {
           <Route path="mortalidade" element={<MortalityPage />} />
           <Route path="estoque" element={<StockPage />} />
           <Route path="funcionarios" element={<EmployeesPage />} />
+          <Route path="calendario" element={<CalendarPage />} />
           {COMING_SOON_ROUTES.map((path) => (
             <Route key={path} path={path} element={<PagePlaceholder title="Módulo em construção" comingSoon />} />
           ))}

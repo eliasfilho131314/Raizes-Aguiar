@@ -124,6 +124,18 @@ export interface StockMovement {
   observacoes: string | null;
 }
 
+export type AgendaItemType = 'tarefa' | 'evento';
+
+export interface AgendaItem {
+  id: string;
+  farmId: string;
+  titulo: string;
+  data: string;
+  tipo: AgendaItemType;
+  concluido: boolean;
+  observacoes: string | null;
+}
+
 export interface Employee {
   id: string;
   farmId: string;

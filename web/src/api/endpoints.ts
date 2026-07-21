@@ -1,5 +1,7 @@
 import { supabase, unwrap, ApiError } from './client';
 import type {
+  AgendaItem,
+  AgendaItemType,
   Animal,
   AnimalCategory,
   AnimalSex,
@@ -459,4 +461,22 @@ export const employeesApi = {
       }),
     );
   },
+};
+
+const AGENDA_ITEM_SELECT = 'id,farmId:fazenda_id,titulo,data,tipo,concluido,observacoes';
+
+export const calendarApi = {
+  list: (fazendaId: string) =>
+    unwrap<AgendaItem[]>(supabase.from('eventos_agenda').select(AGENDA_ITEM_SELECT).eq('fazenda_id', fazendaId).order('data')),
+  create: (input: { fazendaId: string; titulo: string; data: string; tipo: AgendaItemType; observacoes?: string }) =>
+    unwrap<AgendaItem>(
+      supabase
+        .from('eventos_agenda')
+        .insert({ fazenda_id: input.fazendaId, titulo: input.titulo, data: input.data, tipo: input.tipo, observacoes: input.observacoes })
+        .select(AGENDA_ITEM_SELECT)
+        .single(),
+    ),
+  setConcluido: (id: string, concluido: boolean) =>
+    unwrap<AgendaItem>(supabase.from('eventos_agenda').update({ concluido }).eq('id', id).select(AGENDA_ITEM_SELECT).single()),
+  delete: (id: string) => unwrap(supabase.from('eventos_agenda').delete().eq('id', id)),
 };
