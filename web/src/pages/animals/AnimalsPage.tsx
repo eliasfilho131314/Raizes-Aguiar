@@ -331,14 +331,20 @@ export function AnimalsPage() {
               </div>
             </div>
 
-            {canManage && animal.status === 'ativo' && pendingExit?.animalId !== animal.id ? (
+            {animal.status === 'ativo' && pendingExit?.animalId !== animal.id ? (
               <div className="mt-sm flex flex-wrap gap-xs">
-                <button type="button" onClick={() => setPendingExit({ animalId: animal.id, status: 'vendido' })} className="rounded-button border border-border px-sm py-1 text-caption text-text-primary hover:bg-surface-alt">
-                  Marcar vendido
-                </button>
-                <button type="button" onClick={() => setPendingExit({ animalId: animal.id, status: 'abatido' })} className="rounded-button border border-border px-sm py-1 text-caption text-text-primary hover:bg-surface-alt">
-                  Marcar abatido
-                </button>
+                {canManage ? (
+                  <>
+                    <button type="button" onClick={() => setPendingExit({ animalId: animal.id, status: 'vendido' })} className="rounded-button border border-border px-sm py-1 text-caption text-text-primary hover:bg-surface-alt">
+                      Marcar vendido
+                    </button>
+                    <button type="button" onClick={() => setPendingExit({ animalId: animal.id, status: 'abatido' })} className="rounded-button border border-border px-sm py-1 text-caption text-text-primary hover:bg-surface-alt">
+                      Marcar abatido
+                    </button>
+                  </>
+                ) : null}
+                {/* Funcionário registra mortalidade por conta própria (PERFIS DE ACESSO) --
+                    venda/abate ficam restritos a admin/gerente por gerarem lançamento financeiro. */}
                 <button type="button" onClick={() => setPendingExit({ animalId: animal.id, status: 'morto' })} className="rounded-button border border-border px-sm py-1 text-caption text-danger hover:bg-surface-alt">
                   Registrar morte
                 </button>

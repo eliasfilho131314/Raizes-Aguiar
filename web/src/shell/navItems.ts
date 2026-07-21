@@ -37,7 +37,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Pesagens', path: '/pesagens', icon: Scale, comingSoon: true },
   { label: 'Reprodução', path: '/reproducao', icon: HeartPulse },
   { label: 'Sanidade', path: '/sanidade', icon: Syringe },
-  { label: 'Mortalidade', path: '/mortalidade', icon: Skull, comingSoon: true },
+  { label: 'Mortalidade', path: '/mortalidade', icon: Skull },
   { label: 'Financeiro', path: '/financeiro', icon: Wallet, minRole: ['administrador', 'gerente'] },
   { label: 'Estoque', path: '/estoque', icon: Package, comingSoon: true },
   { label: 'Funcionários', path: '/funcionarios', icon: Users, minRole: ['administrador', 'gerente'], comingSoon: true },
