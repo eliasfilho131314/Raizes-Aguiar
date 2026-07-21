@@ -6,6 +6,8 @@ import type {
   AnimalCategory,
   AnimalSex,
   AnimalStatus,
+  ConfinementBatch,
+  ConfinementBatchStatus,
   Employee,
   Farm,
   Pasture,
@@ -511,4 +513,41 @@ export const pasturesApi = {
         .single(),
     ),
   delete: (id: string) => unwrap(supabase.from('pastagens').delete().eq('id', id)),
+};
+
+const CONFINEMENT_BATCH_SELECT =
+  'id,farmId:fazenda_id,nome,dataEntrada:data_entrada,dataSaidaPrevista:data_saida_prevista,quantidadeAnimais:quantidade_animais,pesoMedioEntradaKg:peso_medio_entrada_kg,consumoRacaoKgDia:consumo_racao_kg_dia,status,observacoes';
+
+export const confinementApi = {
+  list: (fazendaId: string) =>
+    unwrap<ConfinementBatch[]>(
+      supabase.from('confinamento_lotes').select(CONFINEMENT_BATCH_SELECT).eq('fazenda_id', fazendaId).order('data_entrada', { ascending: false }),
+    ),
+  create: (input: {
+    fazendaId: string;
+    nome: string;
+    dataEntrada: string;
+    dataSaidaPrevista?: string;
+    quantidadeAnimais: number;
+    pesoMedioEntradaKg?: number;
+    consumoRacaoKgDia?: number;
+  }) =>
+    unwrap<ConfinementBatch>(
+      supabase
+        .from('confinamento_lotes')
+        .insert({
+          fazenda_id: input.fazendaId,
+          nome: input.nome,
+          data_entrada: input.dataEntrada,
+          data_saida_prevista: input.dataSaidaPrevista,
+          quantidade_animais: input.quantidadeAnimais,
+          peso_medio_entrada_kg: input.pesoMedioEntradaKg,
+          consumo_racao_kg_dia: input.consumoRacaoKgDia,
+        })
+        .select(CONFINEMENT_BATCH_SELECT)
+        .single(),
+    ),
+  setStatus: (id: string, status: ConfinementBatchStatus) =>
+    unwrap<ConfinementBatch>(supabase.from('confinamento_lotes').update({ status }).eq('id', id).select(CONFINEMENT_BATCH_SELECT).single()),
+  delete: (id: string) => unwrap(supabase.from('confinamento_lotes').delete().eq('id', id)),
 };

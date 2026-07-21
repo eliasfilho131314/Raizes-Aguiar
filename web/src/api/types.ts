@@ -149,6 +149,21 @@ export interface Pasture {
   observacoes: string | null;
 }
 
+export type ConfinementBatchStatus = 'ativo' | 'finalizado';
+
+export interface ConfinementBatch {
+  id: string;
+  farmId: string;
+  nome: string;
+  dataEntrada: string;
+  dataSaidaPrevista: string | null;
+  quantidadeAnimais: number;
+  pesoMedioEntradaKg: number | null;
+  consumoRacaoKgDia: number | null;
+  status: ConfinementBatchStatus;
+  observacoes: string | null;
+}
+
 export interface Employee {
   id: string;
   farmId: string;
