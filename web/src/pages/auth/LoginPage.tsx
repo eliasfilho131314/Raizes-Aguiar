@@ -31,7 +31,7 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-md">
       <form onSubmit={handleSubmit} className="flex w-full max-w-[380px] flex-col gap-md rounded-card border border-border bg-surface p-lg">
         <div className="flex justify-center pb-sm">
-          <Logo size={32} />
+          <Logo variant="badge" size={140} />
         </div>
         <TextField label="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <TextField label="Senha" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
