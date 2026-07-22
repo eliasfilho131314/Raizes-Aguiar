@@ -65,6 +65,7 @@ export interface Animal {
 export interface Weighing {
   id: string;
   animalId: string;
+  animalLabel?: string;
   data: string;
   pesoKg: number;
   observacoes: string | null;

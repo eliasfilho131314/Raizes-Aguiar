@@ -197,6 +197,19 @@ export const animalsApi = {
     unwrap<Weighing[]>(
       supabase.from('pesagens').select('id,animalId:animal_id,data,pesoKg:peso_kg,observacoes').eq('animal_id', animalId).order('data', { ascending: true }),
     ),
+  // Todas as pesagens da fazenda (join com animais só pra exibir de quem é
+  // cada uma) -- mesmo padrão de healthApi.listForFarm, pro relatório
+  // dedicado de Pesagens (ganho de peso do rebanho como um todo).
+  listWeighingsForFarm: async (fazendaId: string): Promise<Weighing[]> => {
+    const rows = await unwrap<(Weighing & { animal: { numero: string | null; brinco: string | null; nome: string | null } | null })[]>(
+      supabase
+        .from('pesagens')
+        .select('id,animalId:animal_id,data,pesoKg:peso_kg,observacoes,animal:animais!inner(numero,brinco,nome,fazenda_id)')
+        .eq('animal.fazenda_id', fazendaId)
+        .order('data', { ascending: false }),
+    );
+    return rows.map((r) => ({ ...r, animalLabel: r.animal?.nome || r.animal?.numero || r.animal?.brinco || '—' }));
+  },
   addWeighing: (input: { animalId: string; data: string; pesoKg: number; observacoes?: string }) =>
     unwrap<Weighing>(
       supabase

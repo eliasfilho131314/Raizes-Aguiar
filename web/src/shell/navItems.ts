@@ -34,7 +34,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'Pecuária', path: '/animais', icon: Beef },
-  { label: 'Pesagens', path: '/pesagens', icon: Scale, comingSoon: true },
+  { label: 'Pesagens', path: '/pesagens', icon: Scale },
   { label: 'Reprodução', path: '/reproducao', icon: HeartPulse },
   { label: 'Sanidade', path: '/sanidade', icon: Syringe },
   { label: 'Mortalidade', path: '/mortalidade', icon: Skull },
