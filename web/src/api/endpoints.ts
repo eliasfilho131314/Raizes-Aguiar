@@ -44,6 +44,16 @@ export const usersApi = {
       supabase.from('profiles').select('id,name,email,createdAt:created_at').eq('id', userId).single(),
     );
   },
+  updateName: async (name: string): Promise<UserProfile> => {
+    const userId = await currentUserId();
+    return unwrap<UserProfile>(
+      supabase.from('profiles').update({ name }).eq('id', userId).select('id,name,email,createdAt:created_at').single(),
+    );
+  },
+  updatePassword: async (password: string): Promise<void> => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw new ApiError(error.message, 400);
+  },
 };
 
 export const farmsApi = {

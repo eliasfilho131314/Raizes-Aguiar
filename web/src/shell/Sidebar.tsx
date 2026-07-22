@@ -33,7 +33,6 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
         >
           <item.icon size={18} />
           <span className="flex-1">{item.label}</span>
-          {item.comingSoon ? <span className="rounded-full bg-surface-alt px-2 py-0.5 text-[10px] text-text-secondary">em breve</span> : null}
         </NavLink>
       ))}
     </aside>

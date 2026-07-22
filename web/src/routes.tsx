@@ -22,11 +22,8 @@ const PasturesPage = lazy(() => import('./pages/pastures/PasturesPage').then((m)
 const ConfinementPage = lazy(() => import('./pages/confinement/ConfinementPage').then((m) => ({ default: m.ConfinementPage })));
 const SpreadsheetsPage = lazy(() => import('./pages/spreadsheets/SpreadsheetsPage').then((m) => ({ default: m.SpreadsheetsPage })));
 const WeighingsPage = lazy(() => import('./pages/weighings/WeighingsPage').then((m) => ({ default: m.WeighingsPage })));
-
-// Módulos do prompt ainda não implementados nesta fase -- placeholder
-// "em breve" em vez de 404, pra já aparecerem no menu com o nome certo.
-// "ia" saiu de vez -- usuário confirmou que Raízes IA não entra no escopo.
-const COMING_SOON_ROUTES = ['configuracoes', 'perfil'];
+const ProfilePage = lazy(() => import('./pages/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 
 export function AppRoutes() {
   return (
@@ -53,9 +50,8 @@ export function AppRoutes() {
           <Route path="confinamento" element={<ConfinementPage />} />
           <Route path="planilhas" element={<SpreadsheetsPage />} />
           <Route path="pesagens" element={<WeighingsPage />} />
-          {COMING_SOON_ROUTES.map((path) => (
-            <Route key={path} path={path} element={<PagePlaceholder title="Módulo em construção" comingSoon />} />
-          ))}
+          <Route path="perfil" element={<ProfilePage />} />
+          <Route path="configuracoes" element={<SettingsPage />} />
           <Route path="*" element={<PagePlaceholder title="Página não encontrada" />} />
         </Route>
       </Route>
